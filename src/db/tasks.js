@@ -1,13 +1,15 @@
 // Task Database Operations
 import db, { Task } from './index'
+import { logger } from '../utils/logger'
+import { ERROR_MESSAGES } from '../constants'
 
 // Get all tasks
 export async function getAllTasks() {
     try {
         return await db.tasks.toArray()
     } catch (error) {
-        console.error('Failed to get tasks:', error)
-        return []
+        logger.error('Failed to get tasks:', error)
+        throw new Error(ERROR_MESSAGES.DATABASE_ERROR)
     }
 }
 
@@ -16,8 +18,8 @@ export async function getTasksByCategory(categoryId) {
     try {
         return await db.tasks.where('category').equals(categoryId).toArray()
     } catch (error) {
-        console.error('Failed to get tasks by category:', error)
-        return []
+        logger.error('Failed to get tasks by category:', error)
+        throw new Error(ERROR_MESSAGES.DATABASE_ERROR)
     }
 }
 
@@ -26,8 +28,8 @@ export async function getTasksByStatus(completed) {
     try {
         return await db.tasks.where('completed').equals(completed).toArray()
     } catch (error) {
-        console.error('Failed to get tasks by status:', error)
-        return []
+        logger.error('Failed to get tasks by status:', error)
+        throw new Error(ERROR_MESSAGES.DATABASE_ERROR)
     }
 }
 
@@ -44,8 +46,8 @@ export async function getTodayTasks() {
             .between(today.toISOString(), tomorrow.toISOString(), true, false)
             .toArray()
     } catch (error) {
-        console.error('Failed to get today tasks:', error)
-        return []
+        logger.error('Failed to get today tasks:', error)
+        throw new Error(ERROR_MESSAGES.DATABASE_ERROR)
     }
 }
 
@@ -56,7 +58,7 @@ export async function addTask(taskData) {
         await db.tasks.add(task)
         return task
     } catch (error) {
-        console.error('Failed to add task:', error)
+        logger.error('Failed to add task:', error)
         throw error
     }
 }
@@ -68,7 +70,7 @@ export async function updateTask(id, updates) {
         await db.tasks.update(id, updates)
         return await db.tasks.get(id)
     } catch (error) {
-        console.error('Failed to update task:', error)
+        logger.error('Failed to update task:', error)
         throw error
     }
 }
@@ -79,7 +81,7 @@ export async function deleteTask(id) {
         await db.tasks.delete(id)
         return true
     } catch (error) {
-        console.error('Failed to delete task:', error)
+        logger.error('Failed to delete task:', error)
         throw error
     }
 }
@@ -94,7 +96,7 @@ export async function toggleTaskCompletion(id) {
         }
         return false
     } catch (error) {
-        console.error('Failed to toggle task completion:', error)
+        logger.error('Failed to toggle task completion:', error)
         throw error
     }
 }
@@ -111,8 +113,8 @@ export async function searchTasks(query) {
             task.tags.some(tag => tag.toLowerCase().includes(lowerQuery))
         )
     } catch (error) {
-        console.error('Failed to search tasks:', error)
-        return []
+        logger.error('Failed to search tasks:', error)
+        throw new Error(ERROR_MESSAGES.DATABASE_ERROR)
     }
 }
 
@@ -126,7 +128,7 @@ export async function getOverdueTasks() {
             .and(task => !task.completed)
             .toArray()
     } catch (error) {
-        console.error('Failed to get overdue tasks:', error)
-        return []
+        logger.error('Failed to get overdue tasks:', error)
+        throw new Error(ERROR_MESSAGES.DATABASE_ERROR)
     }
 }

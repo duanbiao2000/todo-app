@@ -1,11 +1,13 @@
 // IndexedDB Database Setup using Dexie.js
 import Dexie from 'dexie'
+import { logger } from '../utils/logger'
+import { DB_NAME, DB_VERSION } from '../constants'
 
 // Create database instance
-export const db = new Dexie('TodoAppDB')
+export const db = new Dexie(DB_NAME)
 
 // Define database schema
-db.version(1).stores({
+db.version(DB_VERSION).stores({
     tasks: 'id, category, completed, dueDate, priority, createdAt',
     categories: 'id, order',
     settings: 'key'
@@ -55,7 +57,7 @@ export async function initializeDefaultData() {
             ]
 
             await db.categories.bulkAdd(defaultCategories)
-            console.log('Default categories initialized')
+            logger.info('Default categories initialized')
         }
 
         // Initialize default settings
@@ -64,9 +66,10 @@ export async function initializeDefaultData() {
             await db.settings.add({ key: 'theme', value: 'light' })
         }
 
-        console.log('Database initialized successfully')
+        logger.success('Database initialized successfully')
     } catch (error) {
-        console.error('Failed to initialize database:', error)
+        logger.error('Failed to initialize database:', error)
+        throw error
     }
 }
 

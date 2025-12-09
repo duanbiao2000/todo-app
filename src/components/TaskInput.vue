@@ -3,6 +3,8 @@ import { ref } from 'vue'
 import { useTaskStore } from '../stores/task'
 import { useCategoryStore } from '../stores/category'
 import { useAppStore } from '../stores/app'
+import { validateTaskTitle } from '../utils/validation'
+import { logger } from '../utils/logger'
 
 const taskStore = useTaskStore()
 const categoryStore = useCategoryStore()
@@ -13,6 +15,7 @@ const showAdvanced = ref(false)
 const selectedPriority = ref('medium')
 const selectedCategory = ref('personal')
 const selectedDate = ref('')
+const errorMessage = ref('')
 
 const priorities = [
   { value: 'low', label: '低', color: 'var(--priority-low)' },
@@ -21,7 +24,15 @@ const priorities = [
 ]
 
 async function handleSubmit() {
-  if (!taskTitle.value.trim()) return
+  // 清除之前的错误信息
+  errorMessage.value = ''
+
+  // 验证输入
+  const validationError = validateTaskTitle(taskTitle.value)
+  if (validationError) {
+    errorMessage.value = validationError
+    return
+  }
 
   try {
     await taskStore.addTask({
@@ -38,7 +49,8 @@ async function handleSubmit() {
     selectedDate.value = ''
     showAdvanced.value = false
   } catch (error) {
-    console.error('Failed to add task:', error)
+    logger.error('Failed to add task:', error)
+    errorMessage.value = '添加任务失败，请重试'
   }
 }
 
@@ -58,7 +70,9 @@ function handleKeydown(event) {
         type="text"
         placeholder="添加新任务..."
         class="task-input"
+        :class="{ error: errorMessage }"
         @keydown="handleKeydown"
+        @input="errorMessage = ''"
       />
       
       <div class="input-actions">
@@ -90,6 +104,13 @@ function handleKeydown(event) {
         </button>
       </div>
     </div>
+
+    <!-- Error Message -->
+    <Transition name="fade">
+      <div v-if="errorMessage" class="error-message">
+        {{ errorMessage }}
+      </div>
+    </Transition>
 
     <!-- Advanced Options -->
     <Transition name="slide">
@@ -175,6 +196,20 @@ function handleKeydown(event) {
   color: var(--text-tertiary);
 }
 
+.task-input.error {
+  border-color: var(--accent-danger);
+}
+
+.error-message {
+  margin-top: var(--spacing-2);
+  padding: var(--spacing-2) var(--spacing-3);
+  background-color: rgba(239, 68, 68, 0.1);
+  border-left: 3px solid var(--accent-danger);
+  border-radius: var(--radius-sm);
+  color: var(--accent-danger);
+  font-size: var(--font-size-sm);
+}
+
 .input-actions {
   display: flex;
   gap: var(--spacing-2);
@@ -257,6 +292,16 @@ function handleKeydown(event) {
 }
 
 /* Animations */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity var(--transition-fast);
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
 .slide-enter-active,
 .slide-leave-active {
   transition: all var(--transition-base);

@@ -1,13 +1,15 @@
 // Category Database Operations
 import db, { Category } from './index'
+import { logger } from '../utils/logger'
+import { ERROR_MESSAGES } from '../constants'
 
 // Get all categories
 export async function getAllCategories() {
     try {
         return await db.categories.orderBy('order').toArray()
     } catch (error) {
-        console.error('Failed to get categories:', error)
-        return []
+        logger.error('Failed to get categories:', error)
+        throw new Error(ERROR_MESSAGES.DATABASE_ERROR)
     }
 }
 
@@ -16,7 +18,7 @@ export async function getCategoryById(id) {
     try {
         return await db.categories.get(id)
     } catch (error) {
-        console.error('Failed to get category:', error)
+        logger.error('Failed to get category:', error)
         return null
     }
 }
@@ -28,7 +30,7 @@ export async function addCategory(categoryData) {
         await db.categories.add(category)
         return category
     } catch (error) {
-        console.error('Failed to add category:', error)
+        logger.error('Failed to add category:', error)
         throw error
     }
 }
@@ -39,7 +41,7 @@ export async function updateCategory(id, updates) {
         await db.categories.update(id, updates)
         return await db.categories.get(id)
     } catch (error) {
-        console.error('Failed to update category:', error)
+        logger.error('Failed to update category:', error)
         throw error
     }
 }
@@ -57,7 +59,7 @@ export async function deleteCategory(id) {
         await db.categories.delete(id)
         return true
     } catch (error) {
-        console.error('Failed to delete category:', error)
+        logger.error('Failed to delete category:', error)
         throw error
     }
 }
@@ -73,7 +75,7 @@ export async function reorderCategories(categoryIds) {
         await db.categories.bulkUpdate(updates)
         return true
     } catch (error) {
-        console.error('Failed to reorder categories:', error)
+        logger.error('Failed to reorder categories:', error)
         throw error
     }
 }

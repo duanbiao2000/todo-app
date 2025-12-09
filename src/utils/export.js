@@ -1,5 +1,8 @@
 // Data Export/Import Utilities
 import db from '../db'
+import { validateImportData } from './validation'
+import { logger } from './logger'
+import { ERROR_MESSAGES } from '../constants'
 
 /**
  * Export all data to JSON file
@@ -31,8 +34,8 @@ export async function exportData() {
 
         return true
     } catch (error) {
-        console.error('Export failed:', error)
-        throw new Error('导出失败：' + error.message)
+        logger.error('Export failed:', error)
+        throw new Error(ERROR_MESSAGES.EXPORT_ERROR)
     }
 }
 
@@ -45,12 +48,10 @@ export async function importData(file) {
 
         reader.onload = async (e) => {
             try {
-                const data = JSON.parse(e.target.result)
+                const rawData = JSON.parse(e.target.result)
 
-                // Validate data format
-                if (!data.version || !data.tasks || !data.categories) {
-                    throw new Error('Invalid backup file format')
-                }
+                // Validate and clean data
+                const data = validateImportData(rawData)
 
                 // Clear existing data
                 await db.tasks.clear()
@@ -66,11 +67,16 @@ export async function importData(file) {
 
                 resolve(data)
             } catch (error) {
-                reject(new Error('导入失败：' + error.message))
+                logger.error('Import failed:', error)
+                reject(new Error(ERROR_MESSAGES.IMPORT_ERROR + ': ' + error.message))
             }
         }
 
-        reader.onerror = () => reject(new Error('Failed to read file'))
+        reader.onerror = () => {
+            logger.error('Failed to read file')
+            reject(new Error('无法读取文件'))
+        }
+
         reader.readAsText(file)
     })
 }
