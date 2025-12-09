@@ -1,7 +1,10 @@
 <script setup>
+import { ref } from 'vue'
 import { useAppStore } from '../stores/app'
+import SettingsMenu from './SettingsMenu.vue'
 
 const appStore = useAppStore()
+const showSettings = ref(false)
 </script>
 
 <template>
@@ -55,6 +58,25 @@ const appStore = useAppStore()
             <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
           </svg>
         </button>
+
+        <!-- Settings Button -->
+        <div class="settings-dropdown">
+          <button @click="showSettings = !showSettings" class="btn-icon" title="设置">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M12 1v6m0 6v6"></path>
+              <path d="m4.93 4.93 4.24 4.24m5.66 5.66 4.24 4.24"></path>
+              <path d="M1 12h6m6 0h6"></path>
+              <path d="m4.93 19.07 4.24-4.24m5.66-5.66 4.24-4.24"></path>
+            </svg>
+          </button>
+
+          <Transition name="dropdown">
+            <div v-if="showSettings" class="dropdown-menu">
+              <SettingsMenu @close="showSettings = false" />
+            </div>
+          </Transition>
+        </div>
       </div>
     </div>
   </header>
@@ -152,6 +174,33 @@ const appStore = useAppStore()
   color: var(--accent-primary);
 }
 
+.settings-dropdown {
+  position: relative;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: calc(100% + var(--spacing-2));
+  right: 0;
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
+  min-width: 300px;
+  z-index: var(--z-dropdown);
+}
+
+.dropdown-enter-active,
+.dropdown-leave-active {
+  transition: all var(--transition-fast);
+}
+
+.dropdown-enter-from,
+.dropdown-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
 @media (max-width: 768px) {
   .header-content {
     padding: var(--spacing-3) var(--spacing-4);
@@ -171,6 +220,11 @@ const appStore = useAppStore()
 
   .app-title {
     font-size: var(--font-size-lg);
+  }
+
+  .dropdown-menu {
+    right: auto;
+    left: 0;
   }
 }
 </style>

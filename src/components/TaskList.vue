@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useTaskStore } from '../stores/task'
 import { useAppStore } from '../stores/app'
 import TaskItem from './TaskItem.vue'
+import draggable from 'vuedraggable'
 
 const taskStore = useTaskStore()
 const appStore = useAppStore()
@@ -41,6 +42,19 @@ const filteredTasks = computed(() => {
   }
 
   return tasks
+})
+
+// Draggable tasks model
+const draggableTasks = computed({
+  get: () => filteredTasks.value,
+  set: async (newOrder) => {
+    // Update task order
+    for (let i = 0; i < newOrder.length; i++) {
+      if (newOrder[i].order !== i) {
+        await taskStore.updateTask(newOrder[i].id, { order: i })
+      }
+    }
+  }
 })
 
 const viewTitle = computed(() => {
@@ -99,13 +113,18 @@ const emptyMessage = computed(() => {
       <p class="empty-message">{{ emptyMessage }}</p>
     </div>
 
-    <TransitionGroup v-else name="list" tag="div" class="task-list">
-      <TaskItem
-        v-for="task in filteredTasks"
-        :key="task.id"
-        :task="task"
-      />
-    </TransitionGroup>
+    <draggable
+      v-else
+      v-model="draggableTasks"
+      item-key="id"
+      class="task-list"
+      :animation="200"
+      ghost-class="ghost"
+    >
+      <template #item="{ element }">
+        <TaskItem :task="element" />
+      </template>
+    </draggable>
   </div>
 </template>
 
@@ -194,5 +213,11 @@ const emptyMessage = computed(() => {
 
 .list-move {
   transition: transform 0.3s ease;
+}
+
+/* Drag and Drop */
+.ghost {
+  opacity: 0.5;
+  background-color: var(--accent-primary);
 }
 </style>
