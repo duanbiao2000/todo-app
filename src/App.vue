@@ -1,5 +1,18 @@
 <script setup>
-import { onMounted } from 'vue'
+/**
+ * 🎓 App 根组件
+ * ============================================
+ * 
+ * 📚 职责:
+ * - 应用初始化 (加载主题、数据)
+ * - 注册全局事件监听器
+ * - 布局容器
+ * 
+ * 💡 生命周期:
+ * - onMounted: 初始化数据和监听器
+ * - onUnmounted: 清理监听器 (防止内存泄漏)
+ */
+import { onMounted, onUnmounted } from 'vue'
 import { useAppStore } from './stores/app'
 import { useTaskStore } from './stores/task'
 import { useCategoryStore } from './stores/category'
@@ -12,19 +25,33 @@ const appStore = useAppStore()
 const taskStore = useTaskStore()
 const categoryStore = useCategoryStore()
 
+/**
+ * 🎓 onMounted - 组件挂载后执行
+ * 这里进行所有初始化工作
+ */
 onMounted(async () => {
-  // Load theme
+  // 🎓 加载用户主题偏好
   await appStore.loadTheme()
   
-  // Load data
+  // 🎓 并行加载数据 - Promise.all 提升性能
   await Promise.all([
     taskStore.loadTasks(),
     categoryStore.loadCategories()
   ])
   
-  // Initialize listeners
+  // 🎓 注册全局事件监听器
   appStore.initializeOnlineListeners()
   appStore.initializePWAListeners()
+})
+
+/**
+ * 🎓 onUnmounted - 组件卸载时执行
+ * 
+ * 重要: 清理所有事件监听器
+ * 这是防止内存泄漏的关键步骤
+ */
+onUnmounted(() => {
+  appStore.cleanupListeners()
 })
 </script>
 

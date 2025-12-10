@@ -1,4 +1,18 @@
 <script setup>
+/**
+ * 🎓 任务输入组件 (TaskInput)
+ * ============================================
+ * 
+ * 📚 组件职责:
+ * - 提供任务创建的用户界面
+ * - 收集和验证用户输入
+ * - 提交表单数据到 Store
+ * 
+ * 💡 设计模式:
+ * - 受控表单: 使用 v-model 双向绑定输入值
+ * - 验证前置: 提交前先验证，避免无效请求
+ * - 渐进式披露: 高级选项默认隐藏
+ */
 import { ref } from 'vue'
 import { useTaskStore } from '../stores/task'
 import { useCategoryStore } from '../stores/category'
@@ -6,57 +20,95 @@ import { useAppStore } from '../stores/app'
 import { validateTaskTitle } from '../utils/validation'
 import { logger } from '../utils/logger'
 
+// 🎓 获取所需的 store 实例
 const taskStore = useTaskStore()
 const categoryStore = useCategoryStore()
 const appStore = useAppStore()
 
-const taskTitle = ref('')
-const showAdvanced = ref(false)
-const selectedPriority = ref('medium')
-const selectedCategory = ref('personal')
-const selectedDate = ref('')
-const errorMessage = ref('')
+// ═══════════════════════════════════════════════════════════
+// 📦 表单状态 (Form State)
+// 🎓 使用 ref 创建响应式变量绑定到表单输入框
+// ═══════════════════════════════════════════════════════════
 
+const taskTitle = ref('')           // 任务标题 (必填)
+const showAdvanced = ref(false)     // 是否展开高级选项
+const selectedPriority = ref('medium')  // 优先级默认值
+const selectedCategory = ref('personal') // 分类默认值
+const selectedDate = ref('')        // 截止日期
+const errorMessage = ref('')        // 验证错误信息
+
+/**
+ * 🎓 优先级选项配置
+ * 
+ * 最佳实践: 将配置数据提取为常量
+ * 这样方便后期国际化和统一管理
+ * 
+ * TODO: 考虑从 constants/index.js 导入
+ */
 const priorities = [
   { value: 'low', label: '低', color: 'var(--priority-low)' },
   { value: 'medium', label: '中', color: 'var(--priority-medium)' },
   { value: 'high', label: '高', color: 'var(--priority-high)' }
 ]
 
+// ═══════════════════════════════════════════════════════════
+// ⚡ 表单提交处理
+// 🎓 表单处理流程: 清除错误 → 验证 → 提交 → 重置/报错
+// ═══════════════════════════════════════════════════════════
+
+/**
+ * 🎓 处理表单提交
+ * 
+ * 关键步骤:
+ * 1. 清除之前的错误信息
+ * 2. 前端验证 (调用验证函数)
+ * 3. 调用 store action 保存数据
+ * 4. 成功后重置表单
+ * 5. 失败时显示错误
+ */
 async function handleSubmit() {
-  // 清除之前的错误信息
+  // 步骤1: 清除之前的错误信息
   errorMessage.value = ''
 
-  // 验证输入
+  // 步骤2: 验证输入 (使用独立的验证函数)
   const validationError = validateTaskTitle(taskTitle.value)
   if (validationError) {
     errorMessage.value = validationError
-    return
+    return  // 🎓 提前返回模式: 验证失败直接返回，不执行后续代码
   }
 
   try {
+    // 步骤3: 调用 store 添加任务
     await taskStore.addTask({
       title: taskTitle.value.trim(),
       priority: selectedPriority.value,
       category: selectedCategory.value,
-      dueDate: selectedDate.value || null
+      dueDate: selectedDate.value || null  // 🎓 空字符串转 null
     })
 
-    // Reset form
+    // 步骤4: 成功后重置表单到初始状态
     taskTitle.value = ''
     selectedPriority.value = 'medium'
     selectedCategory.value = appStore.currentCategory || 'personal'
     selectedDate.value = ''
     showAdvanced.value = false
   } catch (error) {
+    // 步骤5: 记录错误并显示友好提示
     logger.error('Failed to add task:', error)
     errorMessage.value = '添加任务失败，请重试'
   }
 }
 
+/**
+ * 🎓 键盘事件处理
+ * 
+ * 用户体验优化:
+ * - Enter 键快速提交 (符合用户直觉)
+ * - Shift+Enter 用于换行 (如果需要多行输入)
+ */
 function handleKeydown(event) {
   if (event.key === 'Enter' && !event.shiftKey) {
-    event.preventDefault()
+    event.preventDefault()  // 🎓 阻止默认行为 (如表单默认提交)
     handleSubmit()
   }
 }

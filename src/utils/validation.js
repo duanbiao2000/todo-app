@@ -1,11 +1,33 @@
-// Input Validation Utilities
+/**
+ * 🎓 输入验证工具函数
+ * ============================================
+ * 
+ * 📚 验证的重要性:
+ * - 安全性: 防止恶意输入 (XSS, SQL注入等)
+ * - 用户体验: 即时反馈输入错误
+ * - 数据一致性: 确保存储的数据符合预期格式
+ * 
+ * 💡 验证函数设计模式:
+ * - 返回错误信息字符串表示验证失败
+ * - 返回 null 表示验证通过
+ * - 这种模式方便链式调用和错误处理
+ */
 
 /**
- * 验证任务标题
+ * 🎓 验证任务标题
+ * 
+ * 验证规则:
+ * 1. 非空检查 (必填)
+ * 2. 类型检查 (必须是字符串)
+ * 3. 去空格后非空 (不能只有空格)
+ * 4. 长度限制 (最大200字符)
+ * 
  * @param {string} title - 任务标题
  * @returns {string|null} 错误信息，null 表示验证通过
  */
 export function validateTaskTitle(title) {
+    // 🎓 Guard Clause 模式: 先检查失败条件，快速返回
+    // 这样代码更容易阅读，避免嵌套
     if (!title || typeof title !== 'string') {
         return '任务标题不能为空'
     }
@@ -20,6 +42,7 @@ export function validateTaskTitle(title) {
         return '任务标题不能超过200个字符'
     }
 
+    // 🎓 所有检查通过，返回 null
     return null
 }
 

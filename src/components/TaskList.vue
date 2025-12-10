@@ -1,28 +1,62 @@
 <script setup>
+/**
+ * 🎓 任务列表组件 (TaskList)
+ * ============================================
+ * 
+ * 📚 组件职责:
+ * - 根据当前视图/分类过滤任务
+ * - 支持搜索过滤
+ * - 支持拖拽排序
+ * - 显示加载和空状态
+ * 
+ * 💡 设计模式:
+ * - 派生数据: 使用 computed 缓存过滤结果
+ * - v-model 双向绑定: vuedraggable 的排序状态
+ * - 条件渲染: loading → empty → list
+ */
 import { computed } from 'vue'
 import { useTaskStore } from '../stores/task'
 import { useAppStore } from '../stores/app'
 import TaskItem from './TaskItem.vue'
 import draggable from 'vuedraggable'
 
+// 🎓 获取 store 实例
 const taskStore = useTaskStore()
 const appStore = useAppStore()
 
+// ═══════════════════════════════════════════════════════════
+// 🔍 核心 computed: 过滤任务列表
+// 🎓 这是本组件最重要的逻辑 - 根据多个条件过滤任务
+// ═══════════════════════════════════════════════════════════
+
+/**
+ * 🎓 过滤任务列表
+ * 
+ * 过滤流程:
+ * 1. 根据当前视图选择基础数据集
+ * 2. 如果有搜索词，进一步过滤
+ * 
+ * 性能考虑:
+ * - computed 会缓存结果
+ * - 只有依赖变化时才重新计算
+ */
 const filteredTasks = computed(() => {
   let tasks = []
 
-  // Filter by view
+  // 🎓 第一步: 根据视图选择任务子集
+  // switch 语句处理多种视图类型
   switch (appStore.currentView) {
     case 'all':
-      tasks = taskStore.activeTasks
+      tasks = taskStore.activeTasks  // 未完成的任务
       break
     case 'today':
-      tasks = taskStore.todayTasks
+      tasks = taskStore.todayTasks   // 今日到期的任务
       break
     case 'completed':
-      tasks = taskStore.completedTasks
+      tasks = taskStore.completedTasks  // 已完成的任务
       break
     case 'category':
+      // 🎓 分类视图需要传入分类 ID
       if (appStore.currentCategory) {
         tasks = taskStore.tasksByCategory(appStore.currentCategory)
       }
@@ -31,9 +65,10 @@ const filteredTasks = computed(() => {
       tasks = taskStore.tasks
   }
 
-  // Filter by search query
+  // 🎓 第二步: 搜索过滤 (如果有搜索词)
   if (appStore.searchQuery.trim()) {
     const query = appStore.searchQuery.toLowerCase()
+    // 多字段搜索: 标题、描述、标签
     tasks = tasks.filter(task =>
       task.title.toLowerCase().includes(query) ||
       (task.description && task.description.toLowerCase().includes(query)) ||
@@ -44,11 +79,17 @@ const filteredTasks = computed(() => {
   return tasks
 })
 
-// Draggable tasks model
+/**
+ * 🎓 拖拽排序的 v-model 实现
+ * 
+ * vuedraggable 需要一个可写的 computed:
+ * - get: 返回当前列表
+ * - set: 处理排序变化，更新数据库中的 order 字段
+ */
 const draggableTasks = computed({
   get: () => filteredTasks.value,
   set: async (newOrder) => {
-    // Update task order
+    // 🎓 遍历更新每个任务的顺序
     for (let i = 0; i < newOrder.length; i++) {
       if (newOrder[i].order !== i) {
         await taskStore.updateTask(newOrder[i].id, { order: i })
@@ -57,12 +98,16 @@ const draggableTasks = computed({
   }
 })
 
+/**
+ * 🎓 视图标题 - 根据当前状态动态生成
+ */
 const viewTitle = computed(() => {
   if (appStore.currentCategory) {
     const category = taskStore.tasks.find(t => t.category === appStore.currentCategory)
     return category ? `分类: ${category.category}` : '分类'
   }
 
+  // 🎓 使用对象映射代替多个 if-else 也是好选择
   switch (appStore.currentView) {
     case 'all':
       return '全部任务'
@@ -75,7 +120,11 @@ const viewTitle = computed(() => {
   }
 })
 
+/**
+ * 🎓 空状态提示 - 根据上下文给出有意义的提示
+ */
 const emptyMessage = computed(() => {
+  // 🎓 搜索无结果与列表为空是不同的场景
   if (appStore.searchQuery.trim()) {
     return '没有找到匹配的任务'
   }

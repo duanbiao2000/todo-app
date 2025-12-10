@@ -1,0 +1,13 @@
+# 🎓 ESLint 忽略文件
+# 这些文件不需要进行代码检查
+
+# 构建输出
+dist
+dev-dist
+
+# 依赖
+node_modules
+
+# 配置文件
+*.config.js
+*.config.cjs

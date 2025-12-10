@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { useAppStore } from '../stores/app'
 import { useCategoryStore } from '../stores/category'
 import { useTaskStore } from '../stores/task'

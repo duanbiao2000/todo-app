@@ -1,27 +1,74 @@
 <script setup>
+/**
+ * 🎓 单个任务项组件 (TaskItem)
+ * ============================================
+ * 
+ * 📚 组件职责:
+ * - 展示单个任务的信息 (标题、截止日期、标签)
+ * - 处理用户交互 (完成、编辑、删除)
+ * - 不负责数据持久化 (交给 Store 处理)
+ * 
+ * 💡 设计原则:
+ * - 单一职责: 只关心一个任务的展示和交互
+ * - 数据向下流动: 通过 props 接收任务数据
+ * - 事件向上传递: 修改操作通过 store 执行
+ */
 import { ref } from 'vue'
 import { useTaskStore } from '../stores/task'
 import { formatRelativeTime, isOverdue } from '../utils/date'
 
+/**
+ * 🎓 defineProps - 声明组件接收的属性
+ * 
+ * 理解 Props:
+ * - Props 是父组件传递给子组件的数据
+ * - 子组件不应直接修改 props (单向数据流)
+ * - type 和 required 提供运行时验证
+ */
 const props = defineProps({
   task: {
     type: Object,
-    required: true
+    required: true  // 🎓 必须传入任务对象，否则报警告
   }
 })
 
+// 🎓 获取 store 实例，用于修改任务状态
 const taskStore = useTaskStore()
-const isEditing = ref(false)
-const editTitle = ref(props.task.title)
 
+// ═══════════════════════════════════════════════════════════
+// 📦 本地状态 (Local State)
+// 🎓 这些状态只用于组件内部 UI 交互
+// 与应用数据（任务列表）无关
+// ═══════════════════════════════════════════════════════════
+
+const isEditing = ref(false)           // 是否处于编辑模式
+const editTitle = ref(props.task.title) // 编辑时的临时标题
+
+// ═══════════════════════════════════════════════════════════
+// ⚡ 事件处理函数
+// 🎓 处理用户交互，调用 store 的 action 来修改数据
+// ═══════════════════════════════════════════════════════════
+
+/**
+ * 🎓 切换任务完成状态
+ * 注意: 这里是调用 store 的 action，而不是直接修改 props
+ */
 async function toggleComplete() {
   try {
     await taskStore.toggleTask(props.task.id)
   } catch (error) {
+    // 🎓 错误处理: 即使失败也应该告知用户
     console.error('Failed to toggle task:', error)
   }
 }
 
+/**
+ * 🎓 删除任务 - 带确认对话框
+ * 
+ * 用户体验提示:
+ * - 删除是危险操作，应该要求确认
+ * - 生产环境考虑用 Toast 或 Modal 替代 confirm
+ */
 async function handleDelete() {
   if (confirm('确定要删除这个任务吗？')) {
     try {
@@ -32,24 +79,35 @@ async function handleDelete() {
   }
 }
 
+/**
+ * 🎓 保存编辑 - 验证后更新
+ */
 async function saveEdit() {
+  // 🎓 防御性编程: 空标题不允许保存
   if (!editTitle.value.trim()) return
   
   try {
     await taskStore.updateTask(props.task.id, {
       title: editTitle.value.trim()
     })
-    isEditing.value = false
+    isEditing.value = false  // 关闭编辑模式
   } catch (error) {
     console.error('Failed to update task:', error)
   }
 }
 
+/**
+ * 🎓 取消编辑 - 恢复原始值
+ */
 function cancelEdit() {
-  editTitle.value = props.task.title
+  editTitle.value = props.task.title  // 🎓 恢复到原始标题
   isEditing.value = false
 }
 
+/**
+ * 🎓 辅助函数: 获取优先级对应的 CSS 类名
+ * 这种模式可以将逻辑与模板分离，保持模板清洁
+ */
 function getPriorityClass() {
   return `priority-${props.task.priority}`
 }
